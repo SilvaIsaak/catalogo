@@ -106,9 +106,9 @@ const DEFAULT_PRODUCTS = [
 
 const STORAGE_KEY = 'gordao_products';
 
-// Supabase configuration
-const SUPABASE_URL = 'https://ljtxtylxqbvzbkfwqged.supabase.co' || '';
-const SUPABASE_ANON_KEY = 'sb_publishable_FtlIGYfZlpHpj4D-R4Wd_w_SeSYhMLt' || '';
+// Supabase configuration - use window variables if available, otherwise defaults
+const SUPABASE_URL = (typeof window !== 'undefined' && window.SUPABASE_URL) || 'https://ljtxtylxqbvzbkfwqged.supabase.co' || '';
+const SUPABASE_ANON_KEY = (typeof window !== 'undefined' && window.SUPABASE_ANON_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqdHh0eWx4cWJ2emJrZndxZ2VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjAxMjAsImV4cCI6MjA5Nzk5NjEyMH0.bK5U3nuvhfm3OTFJ030tEQ6_abrsbMje7O1_C1lS198' || '';
 const SUPABASE_ENABLED = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY && typeof window !== 'undefined' && typeof window.supabase !== 'undefined');
 const supabaseClient = SUPABASE_ENABLED ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
