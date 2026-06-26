@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gordão Esportes - Mantos Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#3b82f6',
+                        'primary-container': '#1e3a8a',
+                        'on-primary': '#ffffff',
+                        'on-primary-container': '#dbeafe',
+                        'secondary': '#f59e0b',
+                        'secondary-container': '#78350f',
+                        'tertiary': '#22c55e',
+                        'surface': '#0f172a',
+                        'background': '#0f172a',
+                        'surface-container': '#1e293b',
+                        'surface-container-high': '#334155',
+                        'surface-container-highest': '#475569',
+                        'on-surface': '#f8fafc',
+                        'on-background': '#f8fafc',
+                        'on-surface-variant': '#94a3b8',
+                    },
+                    borderRadius: {
+                        DEFAULT: '0.25rem',
+                        lg: '0.5rem',
+                        xl: '0.75rem',
+                        '2xl': '1rem',
+                        full: '9999px'
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 9999px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
+        @keyframes pulse-gentle {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.95; }
+        }
+        .animate-pulse-gentle { animation: pulse-gentle 2.5s infinite ease-in-out; }
+        .pb-bottom-nav { padding-bottom: 5rem; }
+
+        /* Modal */
+        #size-modal {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        #size-modal.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Toast */
+        #toast {
+            transform: translateY(1rem);
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Busca sem resultado */
+        #no-results { display: none; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface overflow-x-hidden pb-bottom-nav">
+
+    <!-- NavBar Fixo -->
+    <nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl border-b border-white/5 shadow-lg">
+        <div class="max-w-7xl mx-auto px-6 md:px-16 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <button onclick="openDrawer()" class="md:hidden text-primary hover:text-white transition p-1" aria-label="Abrir menu">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <a data-page="home" onclick="showPage('home'); return false;" href="#" class="flex items-center gap-2 cursor-pointer group">
+                    <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shadow-md group-hover:scale-105 transition-transform overflow-hidden">
+                        <img src="./logo.jpeg" alt="Gordão Esportes Logo" class="w-full h-full object-cover">
+                    </div>
+                    <span class="font-extrabold italic tracking-tight text-primary text-xl uppercase">Gordão Esportes</span>
+                </a>
+            </div>
+            <div class="hidden md:flex gap-6 lg:gap-8 items-center text-xs font-bold uppercase tracking-wider">
+                <a data-page="home" onclick="showPage('home'); return false;" href="#" class="transition-colors py-2 text-primary font-bold border-b-2 border-primary">Home</a>
+                <a data-page="catalogo" onclick="showPage('catalogo'); return false;" href="#" class="transition-colors py-2 text-on-surface-variant hover:text-white">Camisas de Time</a>
+                <a data-page="catalogo" onclick="showPage('catalogo'); return false;" href="#" class="transition-colors py-2 text-on-surface-variant hover:text-white">Seleções</a>
+                <a data-page="catalogo" onclick="showPage('catalogo'); return false;" href="#" class="transition-colors py-2 text-on-surface-variant hover:text-white">Lançamentos</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative hidden md:block">
+                    <input id="search-input" type="text" placeholder="Buscar manto"
+                        class="bg-surface-container border border-white/10 rounded-full px-4 py-2 text-xs text-white focus:outline-none focus:border-primary w-56"
+                        aria-label="Buscar produtos"
+                        oninput="filterCatalog(this.value)">
+                    <svg class="w-4 h-4 text-on-surface-variant absolute right-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </div>
+                <button onclick="showPage('carrinho')" class="text-primary hover:text-white transition p-1.5 relative flex items-center justify-center bg-surface-container-highest/30 hover:bg-surface-container-highest/60 rounded-full border border-white/5" aria-label="Carrinho">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 6h15l-1.5 9h-11z"></path>
+                        <path d="M6 6l-1-3H3"></path>
+                        <circle cx="9" cy="20" r="1"></circle>
+                        <circle cx="18" cy="20" r="1"></circle>
+                    </svg>
+                    <span id="cart-badge" class="absolute -top-1 -right-1 bg-primary-container text-white text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow-lg border border-surface">0</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Drawer Mobile -->
+    <aside id="nav-drawer" class="fixed top-0 left-0 w-72 h-full bg-surface-container border-r border-white/5 z-[100] transform -translate-x-full transition-transform duration-300 shadow-2xl">
+        <div class="p-6 space-y-8">
+            <div class="flex items-center justify-between">
+                <span class="font-extrabold italic tracking-tight text-primary text-xl uppercase">Gordão Esportes</span>
+                <button onclick="closeDrawer()" class="text-on-surface-variant hover:text-white p-1" aria-label="Fechar menu">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <nav class="flex flex-col gap-3 text-base font-bold text-white tracking-wide">
+                <a data-page="home" onclick="showPage('home'); return false;" href="#" class="text-left py-2 border-b border-white/5 flex items-center justify-between text-primary">
+                    <span>Home</span>
+                    <svg class="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </a>
+                <a data-page="catalogo" onclick="showPage('catalogo'); return false;" href="#" class="text-left py-2 border-b border-white/5 flex items-center justify-between">
+                    <span>Camisas de Time</span>
+                    <svg class="w-4 h-4 text-on-surface-variant" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </a>
+                <a data-page="catalogo" onclick="showPage('catalogo'); return false;" href="#" class="text-left py-2 border-b border-white/5 flex items-center justify-between">
+                    <span>Seleções</span>
+                    <svg class="w-4 h-4 text-on-surface-variant" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </a>
+                <a href="https://wa.me/5511999999999" target="_blank" class="text-left py-2 border-b border-white/5 flex items-center justify-between">
+                    <span>Contato</span>
+                    <svg class="w-4 h-4 text-on-surface-variant" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </a>
+            </nav>
+        </div>
+    </aside>
+    <div id="drawer-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden" onclick="closeDrawer()"></div>
+
+    <!-- ABA 1: HOME -->
+    <section id="page-home" class="page active pt-16">
+        <header class="relative h-[680px] w-full flex items-center overflow-hidden">
+            <div class="absolute inset-0 z-10 bg-gradient-to-r from-surface via-surface/45 to-transparent"></div>
+            <div class="absolute inset-0 z-10 bg-gradient-to-t from-surface via-transparent to-transparent"></div>
+            <div class="absolute inset-0 bg-cover bg-center opacity-80" style="background-image: url('https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=1200&q=80')"></div>
+            <div class="relative z-20 px-6 md:px-16 lg:px-24 max-w-7xl mx-auto w-full flex justify-start">
+                <div class="max-w-2xl text-left space-y-6">
+                    <div class="inline-flex items-center gap-2 bg-primary-container/20 border border-primary/20 rounded-full px-4 py-1.5 text-primary text-xs font-bold uppercase tracking-wider animate-pulse-gentle">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                        Qualidade Tailandesa Importada 1:1 Premium
+                    </div>
+                    <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
+                        A torcida veste <br><span class="text-primary italic tracking-normal">qualidade.</span>
+                    </h1>
+                    <p class="text-sm md:text-lg text-on-surface-variant max-w-lg leading-relaxed">
+                        As melhores camisas nacionais e importadas do mercado com tecnologia de absorção e acabamento premium impecável.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                        <button onclick="showPage('catalogo')" class="bg-primary-container text-white font-extrabold h-14 px-8 rounded-full text-sm hover:bg-primary-container/90 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-container/20">
+                            Ver Catálogo <span class="text-sm">→</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Categorias -->
+        <section class="py-12 bg-surface-container border-b border-white/5">
+            <div class="max-w-7xl mx-auto px-6 md:px-16">
+                <div class="text-left mb-8 flex justify-between items-end">
+                    <div>
+                        <span class="text-xs uppercase font-bold text-secondary tracking-widest">Navegação Rápida</span>
+                        <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight mt-1">Categorias em <span class="italic text-secondary">Destaque</span></h2>
+                    </div>
+                </div>
+                <div class="flex gap-4 overflow-x-auto custom-scrollbar pb-4 -mx-2 px-2">
+                    <div onclick="showPage('catalogo')" class="flex-none w-48 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 border border-primary scale-[1.02] shadow-lg shadow-primary/10">
+                        <div class="h-44 bg-surface-container-high/60 flex flex-col justify-center items-center relative p-4 text-center">
+                            <svg class="w-10 h-10 text-primary group-hover:rotate-12 transition-transform duration-300 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            <span class="font-extrabold text-sm text-white">Ver Todos Mantos</span>
+                        </div>
+                    </div>
+                    <div onclick="showPage('catalogo')" class="flex-none w-48 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 border border-white/5 opacity-85 hover:opacity-100 hover:scale-[1.01]">
+                        <div class="h-44 relative bg-surface-container-high">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent z-10"></div>
+                            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style="background-image: url('https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400&q=80')"></div>
+                            <span class="absolute bottom-4 left-4 z-20 text-xs font-black uppercase tracking-wider text-white">Real Madrid</span>
+                        </div>
+                    </div>
+                    <div onclick="showPage('catalogo')" class="flex-none w-48 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 border border-white/5 opacity-85 hover:opacity-100 hover:scale-[1.01]">
+                        <div class="h-44 relative bg-surface-container-high">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent z-10"></div>
+                            <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style="background-image: url('https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=400&q=80')"></div>
+                            <span class="absolute bottom-4 left-4 z-20 text-xs font-black uppercase tracking-wider text-white">Seleção Brasil</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Credenciais -->
+        <section class="py-16 max-w-7xl mx-auto px-6 md:px-16">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-surface-container border border-white/5 p-8 rounded-2xl text-left space-y-4 hover:border-primary/50 hover:bg-surface-container-high transition group cursor-default">
+                    <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-105 transition">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-base font-bold text-white">Qualidade Premium 1:1</h4>
+                        <p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Tecidos técnicos leves de alta performance com tecnologia de absorção de suor.</p>
+                    </div>
+                </div>
+                <div class="bg-surface-container border border-white/5 p-8 rounded-2xl text-left space-y-4 hover:border-tertiary/50 hover:bg-surface-container-high transition group cursor-default">
+                    <div class="w-12 h-12 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary group-hover:scale-105 transition">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-base font-bold text-white">Entrega com Rastreio</h4>
+                        <p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Logística automatizada para todo território nacional, com atualização direta.</p>
+                    </div>
+                </div>
+                <div class="bg-surface-container border border-white/5 p-8 rounded-2xl text-left space-y-4 hover:border-secondary/50 hover:bg-surface-container-high transition group cursor-default">
+                    <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-105 transition">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-base font-bold text-white">Atendimento VIP</h4>
+                        <p class="text-xs text-on-surface-variant mt-2 leading-relaxed">Atendimento humanizado rápido e ágil via WhatsApp para tirar suas dúvidas.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </section>
+
+    <!-- ABA 2: CATÁLOGO -->
+    <section id="page-catalogo" class="page pt-16">
+        <section class="py-12 bg-surface-container border-b border-white/5">
+            <div class="max-w-7xl mx-auto px-6 md:px-16">
+                <span class="text-xs uppercase font-bold text-secondary tracking-widest">Catálogo</span>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-white mt-1">Todos os Mantos</h2>
+                <!-- Busca Mobile -->
+                <div class="relative mt-4 md:hidden">
+                    <input type="text" placeholder="Buscar manto"
+                        class="w-full bg-surface border border-white/10 rounded-full px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary"
+                        oninput="filterCatalog(this.value)">
+                    <svg class="w-4 h-4 text-on-surface-variant absolute right-4 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </div>
+            </div>
+        </section>
+        <main class="max-w-7xl mx-auto px-6 md:px-16 py-8 pb-6 space-y-12">
+            <div id="catalog-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                <!-- Cards renderizados via JS -->
+            </div>
+            <div id="no-results" class="text-center py-20">
+                <svg class="w-12 h-12 text-on-surface-variant mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <p class="text-on-surface-variant font-bold">Nenhum manto encontrado.</p>
+                <p class="text-xs text-on-surface-variant mt-1">Tente outro nome ou <button class="text-primary underline" onclick="filterCatalog('')">limpe a busca</button>.</p>
+            </div>
+        </main>
+    </section>
+
+    <!-- ABA 3: PRODUTO DETALHES -->
+    <section id="page-produto" class="page pt-16">
+        <main class="max-w-7xl mx-auto px-6 md:px-16 py-12 pb-24 space-y-12">
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+                <!-- Galeria -->
+                <div class="space-y-4">
+                    <div class="aspect-square bg-surface-container rounded-2xl overflow-hidden border border-white/5">
+                        <img id="main-product-img" class="w-full h-full object-cover transition-transform duration-300 hover:scale-105" src="" alt="Produto">
+                    </div>
+                    <div id="thumb-grid" class="grid grid-cols-4 gap-3">
+                        <!-- thumbs via JS -->
+                    </div>
+                </div>
+                <!-- Info -->
+                <div class="space-y-6">
+                    <div class="space-y-2">
+                        <span id="prod-category" class="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest block"></span>
+                        <h1 id="prod-name" class="text-2xl md:text-3xl font-extrabold text-white tracking-tight"></h1>
+                        <div class="flex items-center gap-2 text-secondary">
+                            <svg class="w-4 h-4 fill-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            <span class="text-xs font-bold">4.9 (128 avaliações)</span>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <span id="prod-original-price" class="text-[10px] text-on-surface-variant line-through select-none leading-none text-lg"></span>
+                        <div class="flex items-end gap-2">
+                            <span id="prod-price" class="text-3xl md:text-4xl font-black text-white"></span>
+                            <span id="prod-discount" class="text-xs text-tertiary font-bold bg-tertiary/10 px-2 py-0.5 rounded-full border border-tertiary/20"></span>
+                        </div>
+                        <p id="prod-installment" class="text-[10px] text-on-surface-variant"></p>
+                    </div>
+                    <!-- Tamanho -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Tamanho</span>
+                            <button class="text-[10px] text-primary font-bold underline" onclick="openSizeModal()">Guia de Tamanhos</button>
+                        </div>
+                        <div id="size-grid" class="flex flex-wrap gap-2">
+                            <!-- tamanhos via JS -->
+                        </div>
+                        <p id="size-warning" class="text-[10px] text-red-400 font-bold hidden">⚠ Selecione um tamanho antes de continuar.</p>
+                    </div>
+                    <!-- Ações -->
+                    <div class="space-y-3 pt-2">
+                        <button onclick="addToCart()" class="w-full bg-primary-container text-white font-bold py-4 rounded-xl text-sm hover:bg-primary-container/90 active:scale-95 transition-all shadow-lg shadow-primary-container/20 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 6h15l-1.5 9h-11z"></path><path d="M6 6l-1-3H3"></path>
+                            </svg>
+                            Adicionar ao Carrinho
+                        </button>
+                        <a href="https://wa.me/5511999999999" target="_blank" class="w-full border border-[#25D366] text-[#25D366] font-bold py-4 rounded-xl text-sm hover:bg-[#25D366]/10 active:scale-95 transition-all flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                            </svg>
+                            Comprar pelo WhatsApp
+                        </a>
+                    </div>
+                    <!-- Descrição -->
+                    <div class="pt-6 border-t border-white/5">
+                        <h4 class="text-base font-bold text-white mb-3">Descrição</h4>
+                        <p id="prod-description" class="text-xs text-on-surface-variant leading-relaxed"></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Produtos Similares -->
+            <section class="space-y-6">
+                <h3 class="text-xl font-extrabold text-white tracking-tight">Você também pode gostar</h3>
+                <div id="similar-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                    <!-- via JS -->
+                </div>
+            </section>
+        </main>
+
+        <!-- CTA Mobile Fixo -->
+        <div class="md:hidden fixed bottom-16 left-0 right-0 bg-surface/95 backdrop-blur-xl border-t border-white/10 z-40 px-4 py-3">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex flex-col">
+                    <span class="text-xs text-on-surface-variant">R$</span>
+                    <span id="prod-price-mobile" class="text-xl font-black text-white"></span>
+                </div>
+                <button onclick="addToCart()" class="flex-1 bg-primary-container text-white font-bold py-3.5 rounded-xl text-sm hover:bg-primary-container/90 active:scale-95 transition-all shadow-lg shadow-primary-container/20 flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 6h15l-1.5 9h-11z"></path><path d="M6 6l-1-3H3"></path>
+                    </svg>
+                    Adicionar ao Carrinho
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABA 4: CARRINHO -->
+    <section id="page-carrinho" class="page pt-16">
+        <section class="py-12 bg-surface-container border-b border-white/5">
+            <div class="max-w-7xl mx-auto px-6 md:px-16">
+                <span class="text-xs uppercase font-bold text-secondary tracking-widest">Seu pedido</span>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-white mt-1">Carrinho</h2>
+            </div>
+        </section>
+        <main class="max-w-7xl mx-auto px-6 md:px-16 py-8 pb-24 space-y-6">
+            <div id="cart-empty" class="text-center py-24 hidden">
+                <svg class="w-16 h-16 text-on-surface-variant mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M6 6h15l-1.5 9h-11z"></path><path d="M6 6l-1-3H3"></path>
+                    <circle cx="9" cy="20" r="1"></circle><circle cx="18" cy="20" r="1"></circle>
+                </svg>
+                <p class="text-on-surface-variant font-bold text-lg">Seu carrinho está vazio</p>
+                <button onclick="showPage('catalogo')" class="mt-6 bg-primary-container text-white font-bold px-8 py-3 rounded-full text-sm hover:bg-primary-container/90 transition active:scale-95">Ver Catálogo</button>
+            </div>
+            <div id="cart-items" class="space-y-4"></div>
+            <div id="cart-summary" class="hidden bg-surface-container border border-white/5 rounded-2xl p-6 space-y-4">
+                <div class="flex justify-between text-sm text-on-surface-variant">
+                    <span>Subtotal</span>
+                    <span id="cart-subtotal" class="text-white font-bold"></span>
+                </div>
+                <div class="flex justify-between text-sm text-on-surface-variant">
+                    <span>Frete</span>
+                    <span class="text-tertiary font-bold">Grátis</span>
+                </div>
+                <div class="border-t border-white/10 pt-4 flex justify-between">
+                    <span class="font-extrabold text-white">Total</span>
+                    <span id="cart-total" class="font-extrabold text-white text-xl"></span>
+                </div>
+                <a href="https://wa.me/5511999999999" target="_blank"
+                    class="w-full bg-[#25D366] text-white font-bold py-4 rounded-xl text-sm hover:bg-[#25D366]/90 active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                    </svg>
+                    Finalizar pelo WhatsApp
+                </a>
+                <button onclick="clearCart()" class="w-full text-xs text-on-surface-variant hover:text-red-400 transition font-bold py-2">Limpar Carrinho</button>
+            </div>
+        </main>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-surface-container border-t border-white/5 py-16 px-6 md:px-16 text-xs text-on-surface-variant">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+            <div class="space-y-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shadow-md overflow-hidden">
+                        <img src="./logo.jpeg" alt="Gordão Esportes Logo" class="w-full h-full object-cover">
+                    </div>
+                    <span class="font-extrabold italic tracking-tight text-primary text-lg uppercase">Gordão Esportes</span>
+                </div>
+                <p class="leading-relaxed">A maior distribuidora de artigos esportivos importados de alta qualidade das Américas.</p>
+            </div>
+            <div class="space-y-3">
+                <h4 class="font-extrabold uppercase tracking-widest text-primary text-xs text-white">Navegação</h4>
+                <div class="flex flex-col gap-2">
+                    <a data-page="home" onclick="showPage('home'); return false;" href="#" class="text-left hover:text-white transition cursor-pointer">Home</a>
+                    <a data-page="catalogo" onclick="showPage('catalogo'); return false;" href="#" class="text-left hover:text-white transition cursor-pointer">Camisas de Time</a>
+                    <a data-page="catalogo" onclick="showPage('catalogo'); return false;" href="#" class="text-left hover:text-white transition cursor-pointer">Seleções</a>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <h4 class="font-extrabold uppercase tracking-widest text-primary text-xs text-white">Contato</h4>
+                <div class="flex flex-col gap-2">
+                    <p class="text-left flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        (11) 99999-9999
+                    </p>
+                    <p class="text-left flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        contato@gordaoesportes.com
+                    </p>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <h4 class="font-extrabold uppercase tracking-widest text-primary text-xs text-white">Legal</h4>
+                <div class="flex flex-col gap-2">
+                    <a href="#" class="text-left hover:text-white transition cursor-pointer">Termos de Serviço</a>
+                    <a href="#" class="text-left hover:text-white transition cursor-pointer">Política de Privacidade</a>
+                    <a href="#" class="text-left hover:text-white transition cursor-pointer">Trocas e Devoluções</a>
+                </div>
+            </div>
+        </div>
+        <div class="border-t border-white/5 pt-8 text-center flex flex-col sm:flex-row justify-between items-center max-w-7xl mx-auto gap-4">
+            <p>© 2026 Gordão Esportes S/A. Todos os direitos reservados.</p>
+            <div class="flex gap-4 opacity-75">
+                <span>Pix Seguro ✓</span>
+                <span>Correios Rápido ✓</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- FAB WhatsApp -->
+    <a href="https://wa.me/5511999999999" target="_blank" rel="noreferrer"
+        class="fixed bottom-20 md:bottom-8 right-8 w-14 h-14 bg-[#25D366] text-white rounded-full shadow-2xl flex items-center justify-center z-50 hover:scale-110 active:scale-95 transition-all"
+        aria-label="Contato via WhatsApp">
+        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+        </svg>
+    </a>
+
+    <!-- Bottom Nav Mobile -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-xl border-t border-white/10 z-40 pb-0">
+        <div class="flex justify-around py-3">
+            <a data-page="home" onclick="showPage('home'); return false;" href="#" class="flex flex-col items-center gap-1 text-primary">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                <span class="text-[10px] font-bold">Home</span>
+            </a>
+            <a data-page="catalogo" onclick="showPage('catalogo'); return false;" href="#" class="flex flex-col items-center gap-1 text-on-surface-variant">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                    <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                    <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                    <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                </svg>
+                <span class="text-[10px] font-bold">Catálogo</span>
+            </a>
+            <a data-page="carrinho" onclick="showPage('carrinho'); return false;" href="#" class="flex flex-col items-center gap-1 text-on-surface-variant relative">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 6h15l-1.5 9h-11z"></path><path d="M6 6l-1-3H3"></path>
+                    <circle cx="9" cy="20" r="1"></circle><circle cx="18" cy="20" r="1"></circle>
+                </svg>
+                <span class="text-[10px] font-bold">Carrinho</span>
+            </a>
+            <a href="https://wa.me/5511999999999" target="_blank" class="flex flex-col items-center gap-1 text-on-surface-variant">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
+                <span class="text-[10px] font-bold">WhatsApp</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Modal Guia de Tamanhos -->
+    <div id="size-modal" class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeSizeModal()"></div>
+        <div class="relative bg-surface-container border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-extrabold text-white">Guia de Tamanhos</h3>
+                <button onclick="closeSizeModal()" class="text-on-surface-variant hover:text-white transition p-1">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <table class="w-full text-xs text-on-surface-variant border-collapse">
+                <thead>
+                    <tr class="border-b border-white/10">
+                        <th class="text-left py-2 font-bold text-white">Tamanho</th>
+                        <th class="text-left py-2 font-bold text-white">Largura</th>
+                        <th class="text-left py-2 font-bold text-white">Altura</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-white/5"><td class="py-2.5 font-bold text-primary">P</td><td class="py-2.5">50 cm</td><td class="py-2.5">70 cm</td></tr>
+                    <tr class="border-b border-white/5"><td class="py-2.5 font-bold text-primary">M</td><td class="py-2.5">52 cm</td><td class="py-2.5">72 cm</td></tr>
+                    <tr class="border-b border-white/5"><td class="py-2.5 font-bold text-primary">G</td><td class="py-2.5">54 cm</td><td class="py-2.5">74 cm</td></tr>
+                    <tr class="border-b border-white/5"><td class="py-2.5 font-bold text-primary">GG</td><td class="py-2.5">56 cm</td><td class="py-2.5">76 cm</td></tr>
+                    <tr><td class="py-2.5 font-bold text-primary">XG</td><td class="py-2.5">58 cm</td><td class="py-2.5">78 cm</td></tr>
+                </tbody>
+            </table>
+            <p class="mt-4 text-[10px] text-on-surface-variant leading-relaxed">Medidas aproximadas. Em dúvida, prefira o tamanho maior. Camisas tailandesas tendem a ser fiéis ao tamanho brasileiro.</p>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 bg-tertiary text-white text-xs font-bold px-5 py-3 rounded-full shadow-2xl z-[300] flex items-center gap-2 whitespace-nowrap">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span id="toast-msg">Adicionado ao carrinho!</span>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+        window.SUPABASE_URL = 'https://ljtxtylxqbvzbkfwqged.supabase.co';
+        window.SUPABASE_ANON_KEY = 'sb_publishable_FtlIGYfZlpHpj4D-R4Wd_w_SeSYhMLt';
+    </script>
+    <script src="./products.js"></script>
+    <script>
+    // ─────────────────────────────────────────────
+    // DADOS DOS PRODUTOS E CONFIGURAÇÕES
+    // ─────────────────────────────────────────────
+    let PRODUCTS = [];
+    let siteConfig = {};
+
+    async function pageInit() {
+        PRODUCTS = await gordaoLoadProducts();
+        siteConfig = await gordaoLoadConfig();
+        renderCatalog();
+        updateCartBadge();
+        applySiteConfig();
+    }
+
+    pageInit();
+    
+    // Apply site configuration
+    function applySiteConfig() {
+        const whatsappLinks = document.querySelectorAll('a[href*="wa.me"]');
+        const phone = normalizePhoneNumber(siteConfig.whatsappNumber) || '5511999999999';
+        let message = siteConfig.whatsappMessage || 'Olá! Tenho interesse nos produtos da Gordão Esportes!';
+        if (currentProductId) {
+            const product = PRODUCTS.find(p => p.id === currentProductId);
+            if (product) {
+                message = `Olá! Tenho interesse no produto: ${product.name}`;
+            }
+        }
+        const encodedMessage = encodeURIComponent(message);
+        whatsappLinks.forEach(link => {
+            link.href = `https://wa.me/${phone}?text=${encodedMessage}`;
+            link.rel = 'noopener noreferrer';
+        });
+
+        const footer = document.querySelector('footer');
+        if (footer) {
+            const contactSection = footer.querySelectorAll('div > div')[2];
+            if (contactSection) {
+                const contactPs = contactSection.querySelectorAll('p');
+                if (contactPs.length >= 2) {
+                    contactPs[0].textContent = siteConfig.contactPhone || '(11) 99999-9999';
+                    contactPs[1].textContent = siteConfig.contactEmail || 'contato@gordaoesportes.com';
+                }
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // ESTADO
+    // ─────────────────────────────────────────────
+    let cart = JSON.parse(localStorage.getItem('gordao_cart') || '[]');
+    let currentProductId = null;
+    let selectedSize = null;
+
+    // ─────────────────────────────────────────────
+    // UTILITÁRIOS
+    // ─────────────────────────────────────────────
+    function escapeHtml(str) {
+        return String(str ?? '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[c]));
+    }
+
+    function sanitizeUrl(value) {
+        try {
+            const url = new URL(String(value).trim(), window.location.origin);
+            if (['http:', 'https:'].includes(url.protocol)) {
+                return url.href;
+            }
+        } catch (error) {
+            // ignore invalid URL
+        }
+        return '';
+    }
+
+    function normalizePhoneNumber(value) {
+        return String(value || '').replace(/[^0-9]/g, '').slice(0, 15);
+    }
+
+    function getSafeImageUrl(value) {
+        return sanitizeUrl(value) || './logo.jpeg';
+    }
+
+    function fmt(val) {
+        return 'R$ ' + Number(val).toFixed(2).replace('.', ',');
+    }
+
+    function calcDiscount(price, original) {
+        if (!original) return null;
+        return '-' + Math.round((1 - price / original) * 100) + '% OFF';
+    }
+
+    function calcInstallment(price) {
+        const inst = (price / 12).toFixed(2).replace('.', ',');
+        return 'Em até 12x de R$ ' + inst + ' sem juros';
+    }
+
+    function saveCart() {
+        localStorage.setItem('gordao_cart', JSON.stringify(cart));
+        updateCartBadge();
+    }
+
+    function updateCartBadge() {
+        const total = cart.reduce((s, i) => s + i.quantity, 0);
+        document.getElementById('cart-badge').textContent = total;
+    }
+
+    // ─────────────────────────────────────────────
+    // ROTEADOR DE PÁGINAS
+    // ─────────────────────────────────────────────
+    function showPage(id, productId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        const target = document.getElementById('page-' + id);
+        if (target) target.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+
+        document.querySelectorAll('[data-page]').forEach(link => {
+            const isActive = link.dataset.page === id;
+            link.classList.toggle('text-primary', isActive);
+            link.classList.toggle('font-bold', isActive);
+            link.classList.toggle('border-b-2', isActive && link.closest('nav.fixed.top-0'));
+            link.classList.toggle('border-primary', isActive && link.closest('nav.fixed.top-0'));
+            link.classList.toggle('text-on-surface-variant', !isActive);
+        });
+
+        if (id === 'produto' && productId) {
+            loadProduct(productId);
+        }
+        if (id === 'carrinho') {
+            renderCart();
+        }
+
+        closeDrawer();
+    }
+
+    // ─────────────────────────────────────────────
+    // CATÁLOGO DINÂMICO
+    // ─────────────────────────────────────────────
+    function createProductCard(p, onClick) {
+        const imageUrl = getSafeImageUrl(p.image);
+        const el = document.createElement('article');
+        el.className = 'group bg-surface-container border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer relative shadow-md flex flex-col justify-between';
+        el.setAttribute('data-name', String(p.name || '').toLowerCase());
+        el.onclick = onClick;
+
+        const imageWrapper = document.createElement('div');
+        imageWrapper.className = 'relative aspect-[3/4] overflow-hidden bg-surface-container-low shrink-0';
+
+        const imageLayer = document.createElement('div');
+        imageLayer.className = 'w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105';
+        imageLayer.style.backgroundImage = `url("${imageUrl}")`;
+        imageWrapper.appendChild(imageLayer);
+
+        if (p.badge) {
+            const badgeEl = document.createElement('div');
+            badgeEl.className = 'absolute top-3 left-3 z-10 px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest border border-white/10 bg-secondary text-primary';
+            badgeEl.textContent = p.badge;
+            imageWrapper.appendChild(badgeEl);
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center';
+        const overlayText = document.createElement('span');
+        overlayText.className = 'bg-white/95 text-slate-900 text-xs font-extrabold px-4 py-2 rounded-xl scale-95 group-hover:scale-100 transition shadow-lg';
+        overlayText.textContent = 'Ver Detalhes';
+        overlay.appendChild(overlayText);
+        imageWrapper.appendChild(overlay);
+
+        const content = document.createElement('div');
+        content.className = 'p-4 flex-1 flex flex-col justify-between';
+
+        const info = document.createElement('div');
+        const category = document.createElement('span');
+        category.className = 'text-[10px] text-on-surface-variant font-bold uppercase tracking-widest block mb-0.5';
+        category.textContent = p.category || '';
+        const title = document.createElement('h3');
+        title.className = 'font-bold text-xs md:text-sm text-white group-hover:text-primary transition-colors line-clamp-1';
+        title.textContent = p.name || '';
+        info.appendChild(category);
+        info.appendChild(title);
+
+        const footer = document.createElement('div');
+        footer.className = 'mt-4 pt-3 border-t border-white/5 flex items-center justify-between';
+        const priceWrapper = document.createElement('div');
+        priceWrapper.className = 'flex flex-col';
+        if (p.originalPrice) {
+            const originalPrice = document.createElement('span');
+            originalPrice.className = 'text-[10px] text-on-surface-variant line-through select-none leading-none';
+            originalPrice.textContent = fmt(p.originalPrice);
+            priceWrapper.appendChild(originalPrice);
+        }
+        const price = document.createElement('span');
+        price.className = 'text-sm md:text-base font-black text-white';
+        price.textContent = fmt(p.price);
+        priceWrapper.appendChild(price);
+
+        const buyButton = document.createElement('button');
+        buyButton.type = 'button';
+        buyButton.className = 'text-[10px] uppercase font-bold text-primary tracking-widest hover:underline shrink-0';
+        buyButton.textContent = 'Comprar →';
+        buyButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            onClick();
+        });
+
+        footer.appendChild(priceWrapper);
+        footer.appendChild(buyButton);
+        content.appendChild(info);
+        content.appendChild(footer);
+
+        el.appendChild(imageWrapper);
+        el.appendChild(content);
+        return el;
+    }
+
+    function renderCatalog(query) {
+        const grid = document.getElementById('catalog-grid');
+        const noResults = document.getElementById('no-results');
+        const q = (query || '').toLowerCase().trim();
+        const filtered = q ? PRODUCTS.filter(p => p.name.toLowerCase().includes(q)) : PRODUCTS;
+
+        grid.innerHTML = '';
+        if (filtered.length === 0) {
+            grid.style.display = 'none';
+            noResults.style.display = 'block';
+        } else {
+            grid.style.display = '';
+            noResults.style.display = 'none';
+            filtered.forEach(p => {
+                grid.appendChild(createProductCard(p, () => showPage('produto', p.id)));
+            });
+        }
+    }
+
+    function filterCatalog(val) {
+        // Sync both search inputs
+        document.querySelectorAll('input[type="text"]').forEach(i => { if (i.placeholder === 'Buscar manto') i.value = val; });
+        renderCatalog(val);
+        if (val.trim()) showPage('catalogo');
+    }
+
+    // ─────────────────────────────────────────────
+    // PÁGINA DE PRODUTO
+    // ─────────────────────────────────────────────
+    function loadProduct(id) {
+        const p = PRODUCTS.find(x => x.id === id);
+        if (!p) return;
+        currentProductId = id;
+        selectedSize = null;
+
+        document.getElementById('prod-category').textContent = p.category;
+        document.getElementById('prod-name').textContent = p.name;
+        document.getElementById('prod-price').textContent = fmt(p.price);
+        document.getElementById('prod-price-mobile').textContent = fmt(p.price).replace('R$ ','');
+        document.getElementById('prod-description').textContent = p.description;
+        document.getElementById('size-warning').classList.add('hidden');
+
+        const origEl = document.getElementById('prod-original-price');
+        origEl.textContent = p.originalPrice ? fmt(p.originalPrice) : '';
+
+        const discEl = document.getElementById('prod-discount');
+        const disc = calcDiscount(p.price, p.originalPrice);
+        discEl.textContent = disc || '';
+        discEl.style.display = disc ? '' : 'none';
+
+        document.getElementById('prod-installment').textContent = calcInstallment(p.price);
+
+        // Imagem principal
+        const mainImg = document.getElementById('main-product-img');
+        mainImg.src = getSafeImageUrl(p.images[0]);
+        mainImg.alt = p.name || '';
+
+        // Thumbnails
+        const thumbGrid = document.getElementById('thumb-grid');
+        thumbGrid.innerHTML = '';
+        p.images.forEach((img, i) => {
+            const imageSrc = getSafeImageUrl(img.replace('w=600', 'w=200'));
+            const btn = document.createElement('button');
+            btn.className = 'aspect-square bg-surface-container rounded-xl overflow-hidden border transition ' + (i === 0 ? 'border-primary/70' : 'border-white/10 hover:border-primary/50');
+            const imageEl = document.createElement('img');
+            imageEl.className = 'w-full h-full object-cover';
+            imageEl.src = imageSrc;
+            imageEl.alt = `Vista ${i + 1}`;
+            btn.appendChild(imageEl);
+            btn.onclick = () => {
+                mainImg.src = getSafeImageUrl(img);
+                thumbGrid.querySelectorAll('button').forEach(b => {
+                    b.classList.remove('border-primary/70');
+                    b.classList.add('border-white/10');
+                });
+                btn.classList.remove('border-white/10');
+                btn.classList.add('border-primary/70');
+            };
+            thumbGrid.appendChild(btn);
+        });
+
+        // Tamanhos
+        const sizeGrid = document.getElementById('size-grid');
+        sizeGrid.innerHTML = '';
+        p.sizes.forEach((sz, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'py-3 px-4 rounded-xl text-sm font-bold border transition ' + (i === 1 ? 'border-2 border-primary text-primary bg-primary/5' : 'border-white/10 text-on-surface-variant hover:border-primary/30');
+            btn.textContent = sz;
+            if (i === 1) selectedSize = sz; // default M
+            btn.onclick = () => {
+                sizeGrid.querySelectorAll('button').forEach(b => {
+                    b.classList.remove('border-primary', 'text-primary', 'border-2', 'bg-primary/5');
+                    b.classList.add('border-white/10', 'text-on-surface-variant');
+                    b.classList.remove('border-2');
+                    b.style.borderWidth = '';
+                });
+                btn.classList.add('border-2', 'border-primary', 'text-primary', 'bg-primary/5');
+                btn.classList.remove('border-white/10', 'text-on-surface-variant');
+                selectedSize = sz;
+                document.getElementById('size-warning').classList.add('hidden');
+            };
+            sizeGrid.appendChild(btn);
+        });
+
+        // Similares
+        const similar = PRODUCTS.filter(x => x.id !== id).slice(0, 3);
+        const simGrid = document.getElementById('similar-grid');
+        simGrid.innerHTML = '';
+        similar.forEach(sp => {
+            simGrid.appendChild(createProductCard(sp, () => showPage('produto', sp.id)));
+        });
+        // Card "ver mais"
+        const moreCard = document.createElement('article');
+        moreCard.className = 'group bg-surface-container border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer shadow-md flex flex-col justify-between';
+        moreCard.onclick = () => showPage('catalogo');
+
+        const topCard = document.createElement('div');
+        topCard.className = 'relative aspect-[3/4] overflow-hidden bg-surface-container-low shrink-0 flex items-center justify-center';
+        const topContent = document.createElement('div');
+        topContent.className = 'text-center space-y-2';
+        const topIcon = document.createElementNS('http://www.w3.org/2000/svg','svg');
+        topIcon.setAttribute('class','w-10 h-10 text-primary mx-auto');
+        topIcon.setAttribute('viewBox','0 0 24 24');
+        topIcon.setAttribute('fill','none');
+        topIcon.setAttribute('stroke','currentColor');
+        topIcon.setAttribute('stroke-width','2');
+        const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        circle.setAttribute('cx','11');
+        circle.setAttribute('cy','11');
+        circle.setAttribute('r','8');
+        const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+        path.setAttribute('d','m21 21-4.35-4.35');
+        topIcon.appendChild(circle);
+        topIcon.appendChild(path);
+        const moreText = document.createElement('span');
+        moreText.className = 'text-xs text-on-surface-variant';
+        moreText.textContent = 'Ver mais';
+        topContent.appendChild(topIcon);
+        topContent.appendChild(moreText);
+        topCard.appendChild(topContent);
+
+        const bottomCard = document.createElement('div');
+        bottomCard.className = 'p-4 flex-1 flex flex-col justify-between';
+        const title = document.createElement('h3');
+        title.className = 'font-bold text-xs md:text-sm text-white text-center';
+        title.textContent = 'Mais Produtos';
+        const actionWrapper = document.createElement('div');
+        actionWrapper.className = 'mt-4 pt-3 border-t border-white/5 text-center';
+        const actionButton = document.createElement('button');
+        actionButton.type = 'button';
+        actionButton.className = 'text-[10px] uppercase font-bold text-primary tracking-widest hover:underline';
+        actionButton.textContent = 'Ir para o catálogo →';
+        actionWrapper.appendChild(actionButton);
+        bottomCard.appendChild(title);
+        bottomCard.appendChild(actionWrapper);
+
+        moreCard.appendChild(topCard);
+        moreCard.appendChild(bottomCard);
+        simGrid.appendChild(moreCard);
+        
+        // Apply site config for WhatsApp link
+        applySiteConfig();
+    }
+
+    // ─────────────────────────────────────────────
+    // CARRINHO
+    // ─────────────────────────────────────────────
+    function addToCart() {
+        if (!selectedSize) {
+            const w = document.getElementById('size-warning');
+            w.classList.remove('hidden');
+            w.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+        const existing = cart.find(i => i.productId === currentProductId && i.size === selectedSize);
+        if (existing) {
+            existing.quantity++;
+        } else {
+            cart.push({ productId: currentProductId, size: selectedSize, quantity: 1 });
+        }
+        saveCart();
+        showToast('Adicionado ao carrinho! 🎽');
+    }
+
+    function removeFromCart(productId, size) {
+        cart = cart.filter(i => !(i.productId === productId && i.size === size));
+        saveCart();
+        renderCart();
+    }
+
+    function clearCart() {
+        cart = [];
+        saveCart();
+        renderCart();
+    }
+
+    function renderCart() {
+        const itemsEl = document.getElementById('cart-items');
+        const emptyEl = document.getElementById('cart-empty');
+        const summaryEl = document.getElementById('cart-summary');
+
+        itemsEl.innerHTML = '';
+
+        if (cart.length === 0) {
+            emptyEl.classList.remove('hidden');
+            summaryEl.classList.add('hidden');
+            return;
+        }
+        emptyEl.classList.add('hidden');
+        summaryEl.classList.remove('hidden');
+
+        let subtotal = 0;
+        cart.forEach(item => {
+            const p = PRODUCTS.find(x => x.id === item.productId);
+            if (!p) return;
+            subtotal += p.price * item.quantity;
+            const el = document.createElement('div');
+            el.className = 'bg-surface-container border border-white/5 rounded-2xl p-4 flex gap-4 items-center';
+
+            const thumb = document.createElement('div');
+            thumb.className = 'w-20 h-20 rounded-xl overflow-hidden bg-surface-container-high shrink-0';
+            const thumbImg = document.createElement('img');
+            thumbImg.className = 'w-full h-full object-cover';
+            thumbImg.src = getSafeImageUrl(p.image.replace('w=600', 'w=200'));
+            thumbImg.alt = p.name || '';
+            thumb.appendChild(thumbImg);
+
+            const details = document.createElement('div');
+            details.className = 'flex-1 min-w-0';
+            const category = document.createElement('p');
+            category.className = 'text-[10px] text-on-surface-variant uppercase font-bold tracking-wider';
+            category.textContent = p.category || '';
+            const title = document.createElement('h4');
+            title.className = 'font-bold text-sm text-white truncate';
+            title.textContent = p.name || '';
+            const sizeText = document.createElement('p');
+            sizeText.className = 'text-xs text-on-surface-variant mt-0.5';
+            sizeText.textContent = 'Tamanho: ';
+            const sizeSpan = document.createElement('span');
+            sizeSpan.className = 'text-primary font-bold';
+            sizeSpan.textContent = item.size;
+            sizeText.appendChild(sizeSpan);
+            const priceEl = document.createElement('p');
+            priceEl.className = 'text-sm font-black text-white mt-1';
+            priceEl.textContent = fmt(p.price * item.quantity);
+            details.appendChild(category);
+            details.appendChild(title);
+            details.appendChild(sizeText);
+            details.appendChild(priceEl);
+
+            const actions = document.createElement('div');
+            actions.className = 'flex flex-col items-end gap-2 shrink-0';
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'text-on-surface-variant hover:text-red-400 transition p-1';
+            removeBtn.type = 'button';
+            removeBtn.setAttribute('aria-label', 'Remover');
+            removeBtn.addEventListener('click', () => removeFromCart(item.productId, item.size));
+            const removeIcon = document.createElementNS('http://www.w3.org/2000/svg','svg');
+            removeIcon.setAttribute('class','w-4 h-4');
+            removeIcon.setAttribute('viewBox','0 0 24 24');
+            removeIcon.setAttribute('fill','none');
+            removeIcon.setAttribute('stroke','currentColor');
+            removeIcon.setAttribute('stroke-width','2');
+            ['M3 6 5 6 21 6','M19 6l-1 14H6L5 6','M10 11v6','M14 11v6','M9 6V4h6v2'].forEach(d => {
+                const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+                path.setAttribute('d', d);
+                removeIcon.appendChild(path);
+            });
+            removeBtn.appendChild(removeIcon);
+
+            const qtyWrapper = document.createElement('div');
+            qtyWrapper.className = 'flex items-center gap-2';
+            const decrease = document.createElement('button');
+            decrease.className = 'w-7 h-7 rounded-full bg-surface-container-high text-white font-bold text-sm flex items-center justify-center hover:bg-primary/20 transition';
+            decrease.type = 'button';
+            decrease.textContent = '−';
+            decrease.addEventListener('click', () => changeQty(item.productId, item.size, -1));
+            const qty = document.createElement('span');
+            qty.className = 'text-sm font-bold text-white w-4 text-center';
+            qty.textContent = String(item.quantity);
+            const increase = document.createElement('button');
+            increase.className = 'w-7 h-7 rounded-full bg-surface-container-high text-white font-bold text-sm flex items-center justify-center hover:bg-primary/20 transition';
+            increase.type = 'button';
+            increase.textContent = '+';
+            increase.addEventListener('click', () => changeQty(item.productId, item.size, +1));
+            qtyWrapper.appendChild(decrease);
+            qtyWrapper.appendChild(qty);
+            qtyWrapper.appendChild(increase);
+
+            actions.appendChild(removeBtn);
+            actions.appendChild(qtyWrapper);
+            el.appendChild(thumb);
+            el.appendChild(details);
+            el.appendChild(actions);
+            itemsEl.appendChild(el);
+        });
+
+        document.getElementById('cart-subtotal').textContent = fmt(subtotal);
+        document.getElementById('cart-total').textContent = fmt(subtotal);
+        
+        // Apply site config for WhatsApp link
+        applySiteConfig();
+    }
+
+    function changeQty(productId, size, delta) {
+        const item = cart.find(i => i.productId === productId && i.size === size);
+        if (!item) return;
+        item.quantity = Math.max(1, item.quantity + delta);
+        saveCart();
+        renderCart();
+    }
+
+    // ─────────────────────────────────────────────
+    // DRAWER
+    // ─────────────────────────────────────────────
+    function openDrawer() {
+        document.getElementById('nav-drawer').classList.remove('-translate-x-full');
+        document.getElementById('drawer-overlay').classList.remove('hidden');
+    }
+    function closeDrawer() {
+        document.getElementById('nav-drawer').classList.add('-translate-x-full');
+        document.getElementById('drawer-overlay').classList.add('hidden');
+    }
+
+    // ─────────────────────────────────────────────
+    // MODAL TAMANHOS
+    // ─────────────────────────────────────────────
+    function openSizeModal() {
+        document.getElementById('size-modal').classList.add('open');
+    }
+    function closeSizeModal() {
+        document.getElementById('size-modal').classList.remove('open');
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSizeModal(); });
+
+    // ─────────────────────────────────────────────
+    // TOAST
+    // ─────────────────────────────────────────────
+    let toastTimer;
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        document.getElementById('toast-msg').textContent = msg;
+        t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    // ─────────────────────────────────────────────
+    // INIT
+    // ─────────────────────────────────────────────
+    </script>
+</body>
+</html>
