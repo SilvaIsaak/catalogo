@@ -419,6 +419,29 @@
     if (sessionStorage.getItem('gordao_admin_auth') === '1') {
         unlock();
     }
+    
+    // Refresh products when admin page becomes visible or storage changes
+    const refreshAdminProducts = async () => {
+        if (sessionStorage.getItem('gordao_admin_auth') === '1') {
+            products = await gordaoLoadProducts();
+            renderTable();
+        }
+    };
+    
+    document.addEventListener('visibilitychange', async () => {
+        if (!document.hidden) {
+            refreshAdminProducts();
+        }
+    });
+    
+    window.addEventListener('focus', refreshAdminProducts);
+    
+    // Listen for storage changes from other tabs
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'gordao_products') {
+            refreshAdminProducts();
+        }
+    });
 
     // ─────────────────────────────────────────────
     // ESTADO E LÓGICA DO APP
@@ -759,6 +782,9 @@
         gordaoSaveProducts(products);
         closeForm();
         renderTable();
+        
+        // Dispatch a custom event to notify other tabs/windows
+        window.dispatchEvent(new CustomEvent('gordao-products-updated'));
     });
 
     // EXCLUIR PRODUTO (REFINADO)
@@ -770,6 +796,7 @@
         gordaoSaveProducts(products);
         renderTable();
         showToast('Produto removido do catálogo');
+        window.dispatchEvent(new CustomEvent('gordao-products-updated'));
     }
 
     // RESTAURAR CATÁLOGO
@@ -778,6 +805,7 @@
         products = gordaoResetToDefault();
         renderTable();
         showToast('Catálogo restaurado ao padrão de fábrica');
+        window.dispatchEvent(new CustomEvent('gordao-products-updated'));
     }
 
     // EXPORTAR / IMPORTAR BACKUPS
@@ -804,6 +832,7 @@
                 gordaoSaveProducts(products);
                 renderTable();
                 showToast('Novo catálogo importado com sucesso ✓');
+                window.dispatchEvent(new CustomEvent('gordao-products-updated'));
             } catch (e) {
                 alert('Arquivo JSON com formatação inválida. Verifique a estrutura e tente novamente.');
             }

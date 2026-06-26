@@ -130,65 +130,83 @@ function normalizeProductRow(row) {
 
 async function supabaseFetchProducts() {
     if (!supabaseClient) return null;
-    const { data, error } = await supabaseClient.from('products').select('*').order('id', { ascending: true });
-    if (error) {
-        console.error('Erro ao buscar produtos no Supabase:', error);
+    try {
+        const { data, error } = await supabaseClient.from('products').select('*').order('id', { ascending: true });
+        if (error) {
+            console.error('Erro ao carregar produtos do Supabase:', error);
+            return null;
+        }
+        return data.map(normalizeProductRow).filter(Boolean);
+    } catch (e) {
+        console.error('Exceção ao carregar produtos do Supabase:', e);
         return null;
     }
-    return data.map(normalizeProductRow).filter(Boolean);
 }
 
 async function supabaseSaveProductsToRemote(products) {
     if (!supabaseClient) return;
-    const rows = products.map(product => ({
-        id: product.id,
-        name: product.name,
-        category: product.category,
-        badge: product.badge,
-        price: product.price,
-        original_price: product.originalPrice,
-        image: product.image,
-        images: product.images,
-        sizes: product.sizes,
-        description: product.description,
-    }));
-    const { error } = await supabaseClient.from('products').upsert(rows, { onConflict: 'id', returning: 'minimal' });
-    if (error) console.error('Erro ao salvar produtos no Supabase:', error);
+    try {
+        const rows = products.map(product => ({
+            id: product.id,
+            name: product.name,
+            category: product.category,
+            badge: product.badge,
+            price: product.price,
+            original_price: product.originalPrice,
+            image: product.image,
+            images: product.images,
+            sizes: product.sizes,
+            description: product.description,
+        }));
+        const { error } = await supabaseClient.from('products').upsert(rows, { onConflict: 'id', returning: 'minimal' });
+        if (error) console.error('Erro ao salvar produtos no Supabase:', error);
+    } catch (e) {
+        console.error('Exceção ao salvar produtos no Supabase:', e);
+    }
 }
 
 async function supabaseFetchConfig() {
     if (!supabaseClient) return null;
-    const { data, error } = await supabaseClient.from('config').select('*').maybeSingle();
-    if (error) {
-        console.error('Erro ao buscar config no Supabase:', error);
+    try {
+        const { data, error } = await supabaseClient.from('config').select('*').maybeSingle();
+        if (error) {
+            console.error('Erro ao buscar config no Supabase:', error);
+            return null;
+        }
+        if (!data) {
+            return null;
+        }
+        return {
+            whatsappNumber: data.whatsapp_number,
+            whatsappMessage: data.whatsapp_message,
+            contactEmail: data.contact_email,
+            contactPhone: data.contact_phone,
+            storeName: data.store_name,
+            storeTagline: data.store_tagline,
+        };
+    } catch (e) {
+        console.error('Exceção ao buscar config no Supabase:', e);
         return null;
     }
-    if (!data) {
-        return null;
-    }
-    return {
-        whatsappNumber: data.whatsapp_number,
-        whatsappMessage: data.whatsapp_message,
-        contactEmail: data.contact_email,
-        contactPhone: data.contact_phone,
-        storeName: data.store_name,
-        storeTagline: data.store_tagline,
-    };
 }
 
 async function supabaseSaveConfigToRemote(config) {
     if (!supabaseClient) return;
-    const row = {
-        id: 1,
-        whatsapp_number: config.whatsappNumber,
-        whatsapp_message: config.whatsappMessage,
-        contact_email: config.contactEmail,
-        contact_phone: config.contactPhone,
-        store_name: config.storeName,
-        store_tagline: config.storeTagline,
-    };
-    const { error } = await supabaseClient.from('config').upsert(row, { onConflict: 'id', returning: 'minimal' });
-    if (error) console.error('Erro ao salvar config no Supabase:', error);
+    try {
+        const row = {
+            id: 1,
+            whatsapp_number: config.whatsappNumber,
+            whatsapp_message: config.whatsappMessage,
+            contact_email: config.contactEmail,
+            contact_phone: config.contactPhone,
+            store_name: config.storeName,
+            store_tagline: config.storeTagline,
+        };
+        const { error } = await supabaseClient.from('config').upsert(row, { onConflict: 'id', returning: 'minimal' });
+        if (error) console.error('Erro ao salvar config no Supabase:', error);
+    } catch (e) {
+        console.error('Exceção ao salvar config no Supabase:', e);
+    }
 }
 
 async function syncSupabaseData() {
@@ -204,22 +222,34 @@ async function syncSupabaseData() {
 }
 
 async function gordaoLoadProducts() {
-    if (!supabaseClient) return gordaoGetProducts();
-    const remoteProducts = await supabaseFetchProducts();
-    if (remoteProducts && remoteProducts.length > 0) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteProducts));
-        return remoteProducts;
+    // Try Supabase first, but if it fails, fall back to localStorage immediately
+    try {
+        if (supabaseClient) {
+            const remoteProducts = await supabaseFetchProducts();
+            if (remoteProducts && remoteProducts.length > 0) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteProducts));
+                return remoteProducts;
+            }
+        }
+    } catch (e) {
+        console.error('Erro no carregamento via Supabase, usando localStorage:', e);
     }
     return gordaoGetProducts();
 }
 
 async function gordaoLoadConfig() {
-    if (!supabaseClient) return gordaoGetConfig();
-    const remoteConfig = await supabaseFetchConfig();
-    if (remoteConfig) {
-        const cfg = { ...DEFAULT_CONFIG, ...remoteConfig };
-        localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
-        return cfg;
+    // Try Supabase first, but if it fails, fall back to localStorage immediately
+    try {
+        if (supabaseClient) {
+            const remoteConfig = await supabaseFetchConfig();
+            if (remoteConfig) {
+                const cfg = { ...DEFAULT_CONFIG, ...remoteConfig };
+                localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+                return cfg;
+            }
+        }
+    } catch (e) {
+        console.error('Erro no carregamento via Supabase, usando localStorage:', e);
     }
     return gordaoGetConfig();
 }

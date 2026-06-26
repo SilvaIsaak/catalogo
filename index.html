@@ -590,6 +590,28 @@
 
     pageInit();
     
+    // Refresh products whenever the page gets focus, becomes visible, or storage changes
+    const refreshProducts = async () => {
+        PRODUCTS = await gordaoLoadProducts();
+        renderCatalog();
+        applySiteConfig();
+    };
+    
+    document.addEventListener('visibilitychange', async () => {
+        if (!document.hidden) {
+            refreshProducts();
+        }
+    });
+    
+    window.addEventListener('focus', refreshProducts);
+    
+    // Listen for storage changes from other tabs
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'gordao_products' || e.key === 'gordao_config') {
+            refreshProducts();
+        }
+    });
+    
     // Apply site configuration
     function applySiteConfig() {
         const whatsappLinks = document.querySelectorAll('a[href*="wa.me"]');
