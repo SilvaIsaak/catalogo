@@ -284,15 +284,23 @@
                 </div>
 
                 <div>
-                    <label class="field-label">Imagem principal — URL *</label>
-                    <input type="url" id="f-image" required placeholder="https://...">
-                    <p class="text-[10px] text-on-surface-variant mt-1.5">Cole o link direto da imagem (hospedada no Imgur, Unsplash, etc). Esta será a foto principal do catálogo.</p>
+                    <label class="field-label">Imagem principal *</label>
+                    <div class="flex gap-3 items-center">
+                        <input type="file" id="f-image-file" accept="image/*" class="flex-1">
+                        <input type="url" id="f-image" required placeholder="Ou cole a URL..." class="flex-1">
+                    </div>
+                    <p class="text-[10px] text-on-surface-variant mt-1.5">Escolha um arquivo do seu computador OU cole uma URL existente.</p>
+                    <div id="image-preview" class="mt-2">
+                        <img id="preview-img" src="" alt="Preview" class="w-32 h-32 object-cover rounded-lg border border-white/10 hidden">
+                    </div>
                 </div>
 
                 <div>
-                    <label class="field-label">Galeria de fotos (Opcional — Uma URL por linha)</label>
-                    <textarea id="f-images" rows="3" placeholder="https://imagem1.jpg&#10;https://imagem2.jpg" class="custom-scrollbar"></textarea>
-                    <p class="text-[10px] text-on-surface-variant mt-1.5">Se deixar vazio, a imagem principal preencherá automaticamente o carrossel de fotos.</p>
+                    <label class="field-label">Galeria de fotos (Opcional)</label>
+                    <input type="file" id="f-gallery-files" accept="image/*" multiple class="w-full">
+                    <p class="text-[10px] text-on-surface-variant mt-1.5">Escolha múltiplas imagens para a galeria.</p>
+                    <textarea id="f-images" rows="2" placeholder="Ou cole URLs (uma por linha)..." class="custom-scrollbar mt-2"></textarea>
+                    <div id="gallery-preview" class="mt-2 flex flex-wrap gap-2"></div>
                 </div>
 
                 <div>
@@ -351,6 +359,175 @@
         wrapper.appendChild(text);
         parent.appendChild(wrapper);
     }
+
+    // CONFIGURAÇÕES DO SUPABASE STORAGE
+    const SUPABASE_STORAGE_BUCKET = 'product-images';
+
+    // FUNÇÃO PARA FAZER UPLOAD DE IMAGEM PARA O SUPABASE STORAGE
+    async function uploadImageToSupabase(file, folder = 'products') {
+        if (!supabaseClient) {
+            console.error('Supabase client not available');
+            return null;
+        }
+
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+            const filePath = `${folder}/${fileName}`;
+
+            const { error: uploadError } = await supabaseClient.storage
+                .from(SUPABASE_STORAGE_BUCKET)
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: true
+                });
+
+            if (uploadError) {
+                console.error('Erro no upload:', uploadError);
+                return null;
+            }
+
+            // Obter URL pública
+            const { data } = supabaseClient.storage
+                .from(SUPABASE_STORAGE_BUCKET)
+                .getPublicUrl(filePath);
+
+            return data.publicUrl;
+        } catch (error) {
+            console.error('Exceção no upload:', error);
+            return null;
+        }
+    }
+
+    // PREVIEW DE IMAGEM PRINCIPAL
+    document.getElementById('f-image-file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const previewImg = document.getElementById('preview-img');
+                previewImg.src = event.target.result;
+                previewImg.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // ATUALIZAR PREVIEW QUANDO URL É COPIADA
+    document.getElementById('f-image').addEventListener('input', function(e) {
+        const url = e.target.value;
+        if (url) {
+            const previewImg = document.getElementById('preview-img');
+            previewImg.src = url;
+            previewImg.classList.remove('hidden');
+        }
+    });
+
+    // PREVIEW DA GALERIA
+    let selectedGalleryFiles = [];
+    document.getElementById('f-gallery-files').addEventListener('change', function(e) {
+        selectedGalleryFiles = Array.from(e.target.files);
+        const galleryPreview = document.getElementById('gallery-preview');
+        galleryPreview.innerHTML = '';
+        
+        selectedGalleryFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = document.createElement('img');
+                img.src = event.target.result;
+                img.className = 'w-16 h-16 object-cover rounded-lg border border-white/10';
+                galleryPreview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+
+
+    // MODIFICAR O ENVIO DO FORMULÁRIO PARA INCLUIR UPLOADS
+    document.getElementById('product-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const errEl = document.getElementById('form-error');
+        const name = document.getElementById('f-name').value.trim();
+        const category = document.getElementById('f-category').value.trim();
+        const badge = document.getElementById('f-badge').value || null;
+        const price = parseFloat(document.getElementById('f-price').value);
+        const originalPriceRaw = document.getElementById('f-original-price').value;
+        const originalPrice = originalPriceRaw ? parseFloat(originalPriceRaw) : null;
+        let image = document.getElementById('f-image').value.trim();
+        const description = document.getElementById('f-description').value.trim();
+        const sizes = getSelectedSizes();
+        const imagesRaw = document.getElementById('f-images').value.trim();
+        let images = imagesRaw ? imagesRaw.split('\n').map(s => s.trim()).filter(Boolean) : [];
+
+        if (!name || !category || !description || isNaN(price)) {
+            errEl.textContent = '❌ Por favor, preencha todos os campos obrigatórios (*).';
+            errEl.classList.remove('hidden');
+            return;
+        }
+        if (sizes.length === 0) {
+            errEl.textContent = '❌ Selecione ao menos um tamanho disponível para venda.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+        if (originalPrice !== null && originalPrice <= price) {
+            errEl.textContent = '❌ O preço promocional deve ser menor do que o preço original riscado.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+        errEl.classList.add('hidden');
+
+        showToast('Processando imagens... ⏳');
+
+        // UPLOAD DA IMAGEM PRINCIPAL
+        const mainImageFile = document.getElementById('f-image-file').files[0];
+        if (mainImageFile) {
+            const uploadedUrl = await uploadImageToSupabase(mainImageFile);
+            if (uploadedUrl) {
+                image = uploadedUrl;
+            } else {
+                errEl.textContent = '❌ Erro ao fazer upload da imagem principal.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+        }
+
+        // UPLOAD DA GALERIA
+        const galleryUrls = [];
+        for (const file of selectedGalleryFiles) {
+            const uploadedUrl = await uploadImageToSupabase(file);
+            if (uploadedUrl) {
+                galleryUrls.push(uploadedUrl);
+            }
+        }
+        images = [...galleryUrls, ...images];
+
+        if (!image) {
+            errEl.textContent = '❌ Imagem principal é obrigatória.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+
+        const idField = document.getElementById('f-id').value;
+        const payload = { name, category, badge, price, originalPrice, image, images: images.length ? images : [image], sizes, description };
+
+        if (idField) {
+            const id = Number(idField);
+            products = products.map(p => p.id === id ? { ...p, ...payload } : p);
+            showToast('Produto atualizado com sucesso ✓');
+        } else {
+            const id = gordaoNextId(products);
+            products.push({ id, ...payload });
+            showToast('Novo produto cadastrado ✓');
+        }
+
+        gordaoSaveProducts(products);
+        closeForm();
+        renderTable();
+        
+        window.dispatchEvent(new CustomEvent('gordao-products-updated'));
+    });
 
     function installImageFallbacks() {
         document.querySelectorAll('img[data-fallback-src]').forEach(img => {
@@ -700,6 +877,10 @@
         const form = document.getElementById('product-form');
         form.reset();
         document.getElementById('form-error').classList.add('hidden');
+        document.getElementById('f-image-file').value = '';
+        document.getElementById('f-gallery-files').value = '';
+        document.getElementById('gallery-preview').innerHTML = '';
+        selectedGalleryFiles = [];
 
         if (product) {
             document.getElementById('form-title').textContent = 'Editar Produto';
@@ -712,10 +893,26 @@
             document.getElementById('f-image').value = product.image;
             document.getElementById('f-images').value = (product.images || []).join('\n');
             document.getElementById('f-description').value = product.description;
+            
+            // Show preview for main image
+            const previewImg = document.getElementById('preview-img');
+            previewImg.src = product.image;
+            previewImg.classList.remove('hidden');
+            
+            // Show previews for gallery
+            const galleryPreview = document.getElementById('gallery-preview');
+            (product.images || []).forEach(imgUrl => {
+                const img = document.createElement('img');
+                img.src = imgUrl;
+                img.className = 'w-16 h-16 object-cover rounded-lg border border-white/10';
+                galleryPreview.appendChild(img);
+            });
+            
             renderSizeCheckboxes(product.sizes);
         } else {
             document.getElementById('form-title').textContent = 'Novo Produto';
             document.getElementById('f-id').value = '';
+            document.getElementById('preview-img').classList.add('hidden');
             renderSizeCheckboxes();
         }
 
@@ -733,59 +930,7 @@
         if (p) openForm(p);
     }
 
-    document.getElementById('product-form').addEventListener('submit', (e) => {
-        e.preventDefault();
 
-        const name = document.getElementById('f-name').value.trim();
-        const category = document.getElementById('f-category').value.trim();
-        const price = parseFloat(document.getElementById('f-price').value);
-        const originalPriceRaw = document.getElementById('f-original-price').value;
-        const originalPrice = originalPriceRaw ? parseFloat(originalPriceRaw) : null;
-        const image = document.getElementById('f-image').value.trim();
-        const badge = document.getElementById('f-badge').value || null;
-        const description = document.getElementById('f-description').value.trim();
-        const sizes = getSelectedSizes();
-        const imagesRaw = document.getElementById('f-images').value.trim();
-        const images = imagesRaw ? imagesRaw.split('\n').map(s => s.trim()).filter(Boolean) : [image];
-
-        const errEl = document.getElementById('form-error');
-        if (!name || !category || !image || !description || isNaN(price)) {
-            errEl.textContent = '❌ Por favor, preencha todos os campos obrigatórios (*).';
-            errEl.classList.remove('hidden');
-            return;
-        }
-        if (sizes.length === 0) {
-            errEl.textContent = '❌ Selecione ao menos um tamanho disponível para venda.';
-            errEl.classList.remove('hidden');
-            return;
-        }
-        if (originalPrice !== null && originalPrice <= price) {
-            errEl.textContent = '❌ O preço promocional deve ser menor do que o preço original riscado.';
-            errEl.classList.remove('hidden');
-            return;
-        }
-        errEl.classList.add('hidden');
-
-        const idField = document.getElementById('f-id').value;
-        const payload = { name, category, badge, price, originalPrice, image, images, sizes, description };
-
-        if (idField) {
-            const id = Number(idField);
-            products = products.map(p => p.id === id ? { ...p, ...payload } : p);
-            showToast('Produto atualizado com sucesso ✓');
-        } else {
-            const id = gordaoNextId(products);
-            products.push({ id, ...payload });
-            showToast('Novo produto cadastrado ✓');
-        }
-
-        gordaoSaveProducts(products);
-        closeForm();
-        renderTable();
-        
-        // Dispatch a custom event to notify other tabs/windows
-        window.dispatchEvent(new CustomEvent('gordao-products-updated'));
-    });
 
     // EXCLUIR PRODUTO (REFINADO)
     function deleteProduct(id) {
